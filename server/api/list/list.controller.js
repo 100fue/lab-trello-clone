@@ -3,32 +3,32 @@ const _ = require('lodash');
 const listModel = require('./list.model');
 const cardModel = require('../card/card.model');
 
-exports.getLists = function(req, res, next) {
-  	listModel.find({}, function(err, lists) {
-	 	if (err) {
-	 		return res.json(err);
-	 	}
+exports.getLists = function (req, res, next) {
+    listModel.find({}, function (err, lists) {
+        if (err) {
+            return res.json(err);
+        }
 
         return new Promise((resolve, reject) => {
             listModel.populate(lists, 'cards')
                 .then((_lists) => {
                     _.forEach(lists, (list) => {
-                        list.cards = _.orderBy(list.cards, ['position','title','_id']);
+                        list.cards = _.orderBy(list.cards, ['position', 'title', '_id']);
                     });
-                    return res.json( lists );
+                    return res.json(lists);
                 })
                 .catch((error) => res.status(400).json({ message: 'impossible to retrieve cards' }));
         });
-  	});
+    });
 };
 
-exports.createList = function(req, res, next) {
-	var item = new listModel({
-	    title: req.body.title,
-      position: req.body.position
-	});
+exports.createList = function (req, res, next) {
+    var item = new listModel({
+        title: req.body.title,
+        position: req.body.position
+    });
 
-	Q.nfcall(item.save.bind(item))
+    Q.nfcall(item.save.bind(item))
         .then(function () {
             res.json({
                 _id: item._id,
@@ -39,16 +39,16 @@ exports.createList = function(req, res, next) {
         });
 };
 
-exports.editList = function(req, res, next) {
-	listModel
-        .findById(req.params.id, function(err, list) {
+exports.editList = function (req, res, next) {
+    listModel
+        .findById(req.params.id, function (err, list) {
             if (err) {
                 res.status(400).json({ message: 'impossible to update the list', error: err });
             }
 
             if (list) {
                 _.merge(list, req.body);
-                list.save(function(err) {
+                list.save(function (err) {
                     if (err) {
                         res.json({ message: 'impossible to update the list', error: err });
                     };
@@ -61,5 +61,14 @@ exports.editList = function(req, res, next) {
 };
 
 exports.removeList = function (req, res) {
-  // Lesson 2: Implement remove list form the database
+
+    listModel
+        .findByIdAndRemove(req.params.id, function (err) {
+            if (err) {
+                res.json({ message: 'impossible to remove the list', error: err });
+            };
+
+            res.json({ message: 'list removed successfully' });
+        });
+
 };
